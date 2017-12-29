@@ -124,7 +124,7 @@ function addNodesObject( scene, noiseNodes, maxNodes ){
 	var material = new THREE.PointsMaterial();
 	material.sizeAttenuation = true;
 	material.size = DOT_SIZE;
-	material.map = new THREE.TextureLoader().load('../../assets/textures/dot.png');
+	material.map = new THREE.TextureLoader().load('https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/textures/dot.png');
 	material.blending = THREE.AdditiveBlending;
 	material.transparent = true;
 	material.opacity = OPACITY;
