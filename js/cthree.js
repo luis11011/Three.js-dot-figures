@@ -111,6 +111,7 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 
 				function ( error ) {
 					console.log( 'An error happened' );
+					console.log( error );
 				}
 			);
 		})(index);
