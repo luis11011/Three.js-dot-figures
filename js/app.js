@@ -4,10 +4,6 @@ loadScript('libs/dat.gui.min.js');
 loadScript('libs/loaders/OBJLoader.js');
 loadScript('js/cthree.js');
 
-
-// global variables
-//var threshold = 0.1;
-
 var renderer;
 var raycaster;
 var mouse;
@@ -44,7 +40,6 @@ function init(){
 	mouse = { click: false , position: new THREE.Vector2() };
 
 	raycaster = new THREE.Raycaster();
-	//raycaster.params.Points.threshold = threshold;
 
 	var genDistance = Math.tan(cameraFOV*Math.PI/180)*cameraDistance;
 
@@ -55,7 +50,7 @@ function init(){
 	camera.position.y+=0;
 
 
-	addNodesObject( scene , 1200 , 1200 );//createPoints(genDistance,genDistance/WINDOW.ASPECT,genDistance,40,0xff0000);
+	addNodesObject( scene , 1200 , 1200 );
 
 	control = new function() {
 		this.rotationSpeed = 0.001;
@@ -83,11 +78,8 @@ function animate() {
 
 	if (object==undefined) {
 		object = scene.getObjectByName( "nodes" );
-		console.log("object defined");
-		//console.log(object)//*/
 	}
 	else {
-		//console.log(object)
 		object.rotation.y += control.rotationSpeed;
 		object.children[0].material.color = new THREE.Color(control.color);
 		object.children[0].material.opacity = control.opacity;
@@ -96,39 +88,11 @@ function animate() {
 	
 		if (mouse.click){
 			mouse.click = false;
-			/*raycaster.setFromCamera( mouse.position, camera );
-			intersects = raycaster.intersectObject( object.children[0] );*/
 
 			if (morphingIndex==0)
 				object.morphNow(1);
 			else
 				object.morphNow(0);
-
-			console.log("click")
-
-			if ( /*intersects.length > 0*/ false ) {
-				console.log("intersect");
-				var index = intersects[0].index;
-
-				console.log(intersects[0]);
-
-				var vertex = new THREE.Vector3();
-				var vtarget = new THREE.Vector3();
-
-				vertex.x = object.sharedGeometry.attributes.position.array[ index*3 ];
-				vertex.y = object.sharedGeometry.attributes.position.array[ index*3 + 1 ];
-				vertex.z = object.sharedGeometry.attributes.position.array[ index*3 + 2 ];
-
-				vtarget.copy(vertex);		
-
-				vtarget.add(vertex.sub(object.children[0].worldToLocal(intersects[0].point)).multiplyScalar(1));
-
-				object.sharedGeometry.attributes.target_position.array[ index*3 ] 		= vtarget.x;
-				object.sharedGeometry.attributes.target_position.array[ index*3 + 1 ] 	= vtarget.y;
-				object.sharedGeometry.attributes.target_position.array[ index*3 + 2 ] 	= vtarget.z;
-
-				console.log(vtarget);
-			}
 		}
 
 		for (var i = object.sharedGeometry.attributes.position.array.length - 1; i >= 0; i--) {
@@ -165,15 +129,6 @@ function addNodesObject( scene, noiseNodes, maxNodes ){
 	material.transparent = true;
 	material.opacity = OPACITY;
 	material.alphaTest = 0.0001
-
-	// var material2 = new THREE.MeshBasicMaterial();
-	// material2.sizeAttenuation = true;
-	// material2.size = 2;
-	// material2.map = new THREE.TextureLoader().load('../../assets/textures/dot.png');
-	// material2.blending = THREE.AdditiveBlending;
-	// material2.transparent = true;
-	// material2.opacity = 0.5;
-	// material2.alphaTest = 0.0001
 
 	var lineMaterial = new THREE.MeshBasicMaterial( {
 		visible: false, //true,
@@ -221,7 +176,7 @@ function createPoints(rw,rh,rd,n){
 	var sizes = new Float32Array(n);
 
 	for (var i = n-1 ; i >= 0; i--) {
-		//geometry.vertices.push(	new THREE.Vector3( CTHREE.Math.lerp(-rw,rw,CTHREE.Math.normalRandom()) , CTHREE.Math.lerp(-rh,rh,CTHREE.Math.normalRandom()) , CTHREE.Math.lerp(-rd,rd,CTHREE.Math.normalRandom()) ) );
+
 		vertices[i*3+0] = CTHREE.Math.lerp(-rw,rw,CTHREE.Math.normalRandom());
 		vertices[i*3+1] = CTHREE.Math.lerp(-rh,rh,Math.random());
 		vertices[i*3+2] = CTHREE.Math.lerp(-rd,rd,CTHREE.Math.normalRandom());
@@ -246,7 +201,6 @@ function createPoints(rw,rh,rd,n){
 		}
 
 		if (sdi!=i-3){
-			//vertices = CTHREE.swap3inArray( vertices , i , sdi );
 			targets  = CTHREE.swap3inArray( targets ,  i-3 , sdi );
 		}
 	}

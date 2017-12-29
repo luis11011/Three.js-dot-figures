@@ -33,7 +33,6 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 	morphingIndex = -1;
 
 	obj.morphNow = function(index){
-		console.log(obj);
 		index = index || 0;
 
 		if ( obj.morphing == -1 && Array.isArray(obj.geometryMorphs[index]) ) {
@@ -67,11 +66,6 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 	for (var index = 0; index < loads.length; index++)
 	{
 
-		console.log("loader: ");
-		console.log(loader);
-
-		console.log(loads[index]);
-
 		loader[index] = new THREE.OBJLoader();
 
 		(function(index){
@@ -98,7 +92,6 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 							)>=0.00000000002);
 
 							if (add==false){
-								console.log("not added");
 								break;
 							}
 						}
@@ -110,11 +103,6 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 						}
 					}
 
-					console.log(obj);
-					
-					console.log("loaded " + obj.geometryMorphs[index].length/3 + " vertices" );
-
-					// obj.morphNow(index);
 				},
 
 				function ( xhr ) {
