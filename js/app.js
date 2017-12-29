@@ -1,9 +1,3 @@
-loadScript('libs/three.min.js');
-loadScript('libs/stats.min.js');
-loadScript('libs/dat.gui.min.js');
-loadScript('libs/loaders/OBJLoader.js');
-loadScript('js/cthree.js');
-
 var renderer;
 var raycaster;
 var mouse;
