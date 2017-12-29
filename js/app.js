@@ -41,13 +41,14 @@ function init(){
 	camera = new CTHREE.Perspective2DCamera(cameraFOV,cameraDistance*2,cameraDistance);
 	camera.lookAt(scene.position);
 
-	camera.position.y+=0;
+	camera.target = { position: new THREE.Vector3(camera.position.x,camera.position.y,camera.position.z), rSpeed: 0.01 };	
 
+	camera.position.y+=0;
 
 	addNodesObject( scene , 1200 , 1200 );
 
 	control = new function() {
-		this.rotationSpeed = 0.001;
+		this.rotationRSpeed = 0.05;
 		this.opacity = 0.75;
 		this.color = 0xFFFFFF;
 	};
@@ -60,6 +61,7 @@ function init(){
 
 	window.addEventListener( 'resize', onWindowResize, false );
 	document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 }
 
 function animate() {
@@ -74,19 +76,33 @@ function animate() {
 		object = scene.getObjectByName( "nodes" );
 	}
 	else {
-		object.rotation.y += control.rotationSpeed;
+		object.rotation.y += (mouse.position.x - object.rotation.y) * control.rotationRSpeed
+		object.rotation.x += (-mouse.position.y/2 - object.rotation.x) * control.rotationRSpeed
+
 		object.children[0].material.color = new THREE.Color(control.color);
 		object.children[0].material.opacity = control.opacity;
 		object.children[1].material.opacity = control.opacity;
 		object.children[1].material.color = new THREE.Color(control.color);
+
+		if ( Math.abs(camera.position.x-camera.target.position.x)>0.1 ){
+			camera.position.x += (camera.target.position.x-camera.position.x)*camera.target.rSpeed;
+			camera.lookAt(-camera.position.x,0,0);
+		}
 	
-		if (mouse.click && mouse.position.x<0.33){
+		if (mouse.click){
 			mouse.click = false;
 
-			if (morphingIndex==0)
-				object.morphNow(1);
-			else
-				object.morphNow(0);
+			if ( mouse.position.x<0.33 ){
+
+				if (morphingIndex==0){
+					object.morphNow(1);
+					camera.target.position.x = 100;
+				}
+				else{
+					object.morphNow(0);
+					camera.target.position.x = -100;
+				}
+			}
 		}
 
 		for (var i = object.sharedGeometry.attributes.position.array.length - 1; i >= 0; i--) {
@@ -245,7 +261,7 @@ function createPoints(rw,rh,rd,n){
 
 function addControlGui(controlObject) {
 	var gui = new dat.GUI();
-	gui.add(controlObject, 'rotationSpeed', -0.05, 0.05);
+	gui.add(controlObject, 'rotationRSpeed', 0.01, 0.99);
 	gui.add(controlObject, 'opacity', 0.01, 1);
 	gui.addColor(controlObject, 'color');
 }
@@ -253,6 +269,11 @@ function addControlGui(controlObject) {
 function onDocumentMouseDown( event ) {
 	event.preventDefault();
 	mouse.click = true;
+	return mouse;
+}
+
+function onDocumentMouseMove( event ) {
+	event.preventDefault();
 	mouse.position.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	mouse.position.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	return mouse;
