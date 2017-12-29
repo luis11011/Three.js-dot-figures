@@ -74,6 +74,8 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 				// resource URL
 				'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/models/'+loads[index],
 				function ( loadedObject ) {
+					
+					console.log("loadedObject");
 
 					var c = 0;
 
