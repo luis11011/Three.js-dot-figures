@@ -86,7 +86,7 @@ function animate() {
 		object.children[1].material.opacity = control.opacity;
 		object.children[1].material.color = new THREE.Color(control.color);
 	
-		if (mouse.click){
+		if (mouse.click && mouse.position.x<0.5){
 			mouse.click = false;
 
 			if (morphingIndex==0)
