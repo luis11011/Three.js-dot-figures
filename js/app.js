@@ -77,7 +77,7 @@ function animate() {
 	}
 	else {
 		object.rotation.y += (mouse.position.x - object.rotation.y) * control.rotationRSpeed
-		object.rotation.x += (-mouse.position.y/2 - object.rotation.x) * control.rotationRSpeed
+		object.rotation.x += (-mouse.position.y/32 - object.rotation.x) * control.rotationRSpeed
 
 		object.children[0].material.color = new THREE.Color(control.color);
 		object.children[0].material.opacity = control.opacity;
@@ -149,7 +149,7 @@ function addNodesObject( scene, noiseNodes, maxNodes ){
 	var positions = new Float32Array(obj.maxNodes*3);
 	var targets = new Float32Array(obj.maxNodes*3);
 
-	for (var i = maxNodes - 1 ; i >= 0; i--) {
+	for (var i = maxNodes*3 - 1 ; i >= 0; i--) {
 		positions[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
 		targets[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
 	}
