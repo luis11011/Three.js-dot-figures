@@ -14,6 +14,8 @@ var DOT_SIZE = 0.9;
 
 var OBJECT_SCALE = 0.5;
 
+var INIT_RATIO = 0.05;
+
 var MAX_RANDOM = 250
 
 var cameraFOV = 45;
@@ -149,9 +151,14 @@ function addNodesObject( scene, noiseNodes, maxNodes ){
 	var positions = new Float32Array(obj.maxNodes*3);
 	var targets = new Float32Array(obj.maxNodes*3);
 
-	for (var i = maxNodes*3 - 1 ; i >= 0; i--) {
+	for (var i = maxNodes*3 - 1 ; i >= maxNodes; i--) {
 		positions[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
 		targets[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+	}
+
+	for (var i = maxNodes - 1 ; i >= 0; i--) {
+		positions[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
+		targets[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
 	}
 
 	geometry.addAttribute('position',new THREE.BufferAttribute(positions,3))
