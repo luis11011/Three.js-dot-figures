@@ -1,3 +1,7 @@
+//var LOAD_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/textures/';
+var LOAD_URL = '../assets/textures/';
+
+
 var renderer;
 var raycaster;
 var mouse;
@@ -47,7 +51,7 @@ function init(){
 
 	camera.position.y+=0;
 
-	addNodesObject( scene , 1200 , 1200 );
+	addNodesObject( scene , 1200 , 3000, 12800 );
 
 	control = new function() {
 		this.rotationRSpeed = 0.05;
@@ -70,9 +74,9 @@ function animate() {
 
 	setTimeout( function() {
 
-        requestAnimationFrame( animate );
+		requestAnimationFrame( animate );
 
-    }, 1000 / 60 );
+	}, 1000 / 60 );
 
 	if (object==undefined) {
 		object = scene.getObjectByName( "nodes" );
@@ -81,22 +85,22 @@ function animate() {
 		object.rotation.y += (mouse.position.x - object.rotation.y) * control.rotationRSpeed
 		object.rotation.x += (-mouse.position.y/32 - object.rotation.x) * control.rotationRSpeed
 
-		object.children[0].material.color = new THREE.Color(control.color);
 		object.children[0].material.opacity = control.opacity;
-		object.children[1].material.opacity = control.opacity;
+		object.children[0].material.color = new THREE.Color(control.color);
+		//object.children[1].material.opacity = control.opacity/12;
 		object.children[1].material.color = new THREE.Color(control.color);
 
 		if ( Math.abs(camera.position.x-camera.target.position.x)>0.1 ){
 			camera.position.x += (camera.target.position.x-camera.position.x)*camera.target.rSpeed;
 			camera.lookAt(-camera.position.x,0,0);
 		}
-	
+
 		if (mouse.click){
 			mouse.click = false;
 
 			if ( mouse.position.x<0.33 ){
 
-				if (morphingIndex==0){
+				if (object.morphingIndex==0){
 					object.morphNow(1);
 					camera.target.position.x = 100;
 				}
@@ -107,11 +111,7 @@ function animate() {
 			}
 		}
 
-		for (var i = object.sharedGeometry.attributes.position.array.length - 1; i >= 0; i--) {
-			object.sharedGeometry.attributes.position.array[i] += (object.sharedGeometry.attributes.target_position.array[i] - object.sharedGeometry.attributes.position.array[i])*RESTITUTION_SPEED;
-		}
-
-		object.sharedGeometry.attributes.position.needsUpdate = true; // (!!!!!)
+		object.updateGeometries(RESTITUTION_SPEED);
 	}
 
 	render();
@@ -123,9 +123,7 @@ function render(){
 	renderer.render(scene, camera);
 }
 
-function addNodesObject( scene, noiseNodes, maxNodes ){
-
-	var geometry = new THREE.BufferGeometry();
+function addNodesObject( scene, noiseNodes, maxNodes, maxNodesLines ){
 
 	obj = new THREE.Object3D();
 
@@ -133,48 +131,33 @@ function addNodesObject( scene, noiseNodes, maxNodes ){
 
 	obj.maxNodes = maxNodes;
 
-	var material = new THREE.PointsMaterial();
-	material.sizeAttenuation = true;
-	material.size = DOT_SIZE;
-	material.map = new THREE.TextureLoader().load('https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/textures/dot.png');
-	material.blending = THREE.AdditiveBlending;
-	material.transparent = true;
-	material.opacity = OPACITY;
-	material.alphaTest = 0.0001
+	obj.maxNodesLines = maxNodesLines;
 
-	var lineMaterial = new THREE.MeshBasicMaterial( {
-		visible: false, //true,
+	var material = new THREE.PointsMaterial({
+		sizeAttenuation: true,
+		size: DOT_SIZE,
+		map: new THREE.TextureLoader().load(LOAD_URL + 'dot.png'),
+		blending: THREE.AdditiveBlending,
 		transparent: true,
-		opacity: 0.15,
+		opacity: OPACITY,
+		alphaTest: 0.0001
+	});
+
+	var lineMaterial = new THREE.LineBasicMaterial( {
+		visible: true, //true,
+		transparent: true,
+		linecap: 'round', //ignored by WebGLRenderer
+		linejoin:  'round', //ignored by WebGLRenderer
+		//vertexColors: THREE.VertexColors
 	} );
 
-	var positions = new Float32Array(obj.maxNodes*3);
-	var targets = new Float32Array(obj.maxNodes*3);
-
-	for (var i = maxNodes*3 - 1 ; i >= maxNodes; i--) {
-		positions[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
-		targets[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
-	}
-
-	for (var i = maxNodes - 1 ; i >= 0; i--) {
-		positions[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
-		targets[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
-	}
-
-	geometry.addAttribute('position',new THREE.BufferAttribute(positions,3))
-	geometry.addAttribute('target_position',new THREE.BufferAttribute(targets,3))
-
-	geometry.boundingBox = null;
-
-	geometry.computeBoundingSphere();
-
-	obj.sharedGeometry = geometry;
+	obj.lineOpacity = 0.125;
 
 	CTHREE.MorphObject3DInterface(obj,['human10.obj','bird10.obj']);
 
-	obj.add(  new THREE.Points( geometry , material  ) , new THREE.Line( geometry , lineMaterial )  );
+	obj.add(  new THREE.Points( obj.pointGeometry , material  ) , new THREE.Line( obj.lineGeometry , lineMaterial )  );
 	obj.name = "nodes";
-	obj.children[0].name = "nodes.dots";
+	obj.children[0].name = "nodes.points";
 	obj.children[0].castShadow = false;
 	obj.children[1].name = "nodes.lines";
 	obj.children[1].castShadow = false;

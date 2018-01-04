@@ -1,5 +1,9 @@
+//var LOAD_MODELS_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/models/';
+var LOAD_MODELS_URL = '../assets/models/';
 
 var CTHREE = { Math: {} };
+
+CTHREE.ArrayUtils = {};
 
 CTHREE.swap3inArray = function(array,i,j){
 	var aux = [];
@@ -20,46 +24,204 @@ CTHREE.swap3inArray = function(array,i,j){
 }
  
 CTHREE.MouseController = function(){
-	projector = new THREE.Projector();
-
 	
 }
 
 
+CTHREE.Morph = function(pointArray,lineArray){
+
+	return {pointPosition: pointArray, linePosition: lineArray }
+}
+
+distanceToNext = function(array,i){
+	return 	Math.pow(array[i  ]-array[i+3 ],2) +
+			Math.pow(array[i+1]-array[i+4],2) +
+			Math.pow(array[i+2]-array[i+5],2)
+}
+
+setIntervalLimited = function(foo, ms, iterations){
+	var counter = 0;
+	var looper = setInterval(function(){
+		foo();
+		if (++counter>iterations){
+			clearInterval(looper);
+		}
+	}, ms);
+}
+
+setIntervalTimeout = function(foo, ms_interval, ms_timeout ){
+	var looper = setInterval(foo, ms_interval);
+	setTimeout( function(){clearInterval(looper)},ms_timeout)
+}
+
+setIntervalUntil = function(foo, ms_interval, until_function ){
+	var looper = setInterval(function(){
+		foo();
+		if (until_function()){
+			clearInterval(looper);
+		}
+	}, ms);
+}
+
 CTHREE.MorphObject3DInterface = function(obj,loads){
+
+	// point geometry
+	obj.pointGeometry = new THREE.BufferGeometry();
+	obj.pointGeometry.setDrawRange( 0, obj.noiseNodes/2 );
+	obj.pointGeometry.countTarget = obj.maxNodes;
+
+	var positions = new Float32Array(obj.maxNodes*3);
+	var targets = new Float32Array(obj.maxNodes*3);
+
+	for (var i = obj.maxNodes*3 - 1 ; i >= obj.maxNodes; i--) {
+		positions[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+		targets[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+	}
+	for (var i = obj.maxNodes - 1 ; i >= 0; i--) {
+		positions[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
+		targets[i] = CTHREE.Math.normalRandom()*INIT_RATIO*2 -INIT_RATIO;
+	}
+
+	obj.pointGeometry.addAttribute('position',new THREE.BufferAttribute(positions,3))
+	obj.pointGeometry.addAttribute('target_position',new THREE.BufferAttribute(targets,3))
+	obj.pointGeometry.boundingBox = null;
+	obj.pointGeometry.computeBoundingSphere();
+
+	// line geometry
+	obj.lineGeometry = new THREE.BufferGeometry();
+	obj.lineGeometry.setDrawRange( 0, obj.noiseNodes/2 );
+
+	var positions = new Float32Array(obj.maxNodesLines*3);
+	var targets = new Float32Array(obj.maxNodesLines*3);
+	//var colors = new Float32Array(obj.maxNodesLines*3);
+
+	obj.c_black = new THREE.Color( 0x000000 );
+	obj.c_white = new THREE.Color( 0xffffff );
+
+	/*for (var i = obj.maxNodesLines - 1 ; i >= 0; i--) {
+		var color = !(i%40) ? obj.c_white : obj.c_black;
+		colors[i*3-3] = color.r;
+		colors[i*3-2] = color.g;
+		colors[i*3-1] = color.b;
+	}*/
+
+	for (var i = obj.maxNodesLines*3 - 1 ; i >= 0; i--) {
+		positions[i] = obj.pointGeometry.attributes.position.array[i] || CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+		targets[i] = obj.pointGeometry.attributes.target_position.array[i]  || CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+	}
+
+	//obj.lineGeometry.addAttribute( 'color' , new THREE.Float32BufferAttribute( colors, 3 ) );
+	obj.lineGeometry.addAttribute( 'position' , new THREE.Float32BufferAttribute(positions,3) );
+	obj.lineGeometry.addAttribute( 'target_position' , new THREE.Float32BufferAttribute(targets,3) );
+	obj.lineGeometry.boundingBox = null;
+	obj.lineGeometry.computeBoundingSphere();
+	// geometries end
 	
 	obj.morphing = -1;
 	obj.geometryMorphs = [];
 	morphingIndex = -1;
 
+	obj.updateGeometries = function(speed){
+		for (var i = obj.pointGeometry.attributes.position.array.length - 1; i >= 0; i--)
+			obj.pointGeometry.attributes.position.array[i] += (obj.pointGeometry.attributes.target_position.array[i] - obj.pointGeometry.attributes.position.array[i])*speed;
+
+		obj.pointGeometry.attributes.position.needsUpdate = true;
+
+		obj.pointGeometry.drawRange.count += Math.sign((obj.pointGeometry.countTarget - obj.pointGeometry.drawRange.count));
+
+		for (var i = obj.lineGeometry.attributes.position.array.length - 1; i >= 0; i--){
+			obj.lineGeometry.attributes.position.array[i] += (obj.lineGeometry.attributes.target_position.array[i] - obj.lineGeometry.attributes.position.array[i])*speed;
+		}
+
+		/*for (var i = obj.lineGeometry.attributes.color.array.length - 3; i >= 0; i-=3){
+			var color = i%9 ? obj.c_white : obj.c_black;
+			// var color = (distanceToNext(obj.pointGeometry.attributes.position.array,i)<0.000000001) ? obj.c_white : obj.c_black;
+			colors[i] = color.r;
+			colors[i+1] = color.g;
+			colors[i+2] = color.b;
+		}*/
+
+		obj.lineGeometry.attributes.position.needsUpdate = true;
+
+		//for (var i = obj.maxNodesLines - 1 ; i >= 1; i--) {
+		//	var color = /*(Math.abs(obj.pointGeometry.attributes.position.array[i]-obj.pointGeometry.attributes.position.array[i+3])<200.0)*/ i%2 ? obj.c_white : obj.c_black;
+		//	colors[i*3-3] = color.r;
+		//	colors[i*3-2] = color.g;
+		//	colors[i*3-1] = color.b;
+		//}
+
+	}
+
 	obj.morphNow = function(index){
+		
 		index = index || 0;
 
-		if ( obj.morphing == -1 && Array.isArray(obj.geometryMorphs[index]) ) {
+		if ( obj.morphing == -1 && Array.isArray(obj.geometryMorphs[index].pointPosition) ) {
 			
-			morphingIndex = index;
-			obj.morphing = morphingIndex ;
+			obj.morphingIndex = index;
+			obj.morphing = obj.morphingIndex ;
 
-			obj.sharedGeometry.setDrawRange( 0, 6000*3 );
+			// mess up
 
-			for (var i = obj.sharedGeometry.attributes.position.array.length - 1; i >= 0; i--) {
-				obj.sharedGeometry.attributes.target_position.array[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
-			}
+			obj.lineGeometry.setDrawRange( 0, obj.pointGeometry.drawRange.count );
+			obj.pointGeometry.setDrawRange( 0, obj.noiseNodes );
+			
+			obj.pointGeometry.countTarget = obj.noiseNodes;
 
-			setTimeout( function(){
-				// reorder
-				obj.sharedGeometry.setDrawRange( 0, Math.min(obj.geometryMorphs[morphingIndex].length/3,obj.maxNodes) );
-				obj.sharedGeometry.attributes.target_position.array
-				for (var i = obj.geometryMorphs[morphingIndex].length - 1; i >= 0; i--) {
-					obj.sharedGeometry.attributes.target_position.array[i] = obj.geometryMorphs[morphingIndex][i]
+			setIntervalUntil(
+				function(){
+					obj.children[1].material.opacity -= 0.01;
+				},
+				10,
+				function(){
+					return (obj.children[1].material.opacity<=0.0);
 				}
+				)
+			
+			for (var i = obj.pointGeometry.attributes.target_position.array.length - 1; i >= 0; i--)
+				obj.pointGeometry.attributes.target_position.array[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+
+			for (var i = obj.lineGeometry.attributes.target_position.array.length - 1; i >= 0; i--)
+				obj.lineGeometry.attributes.target_position.array[i] = obj.pointGeometry.attributes.target_position.array[i] || CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
+			
+			setTimeout( function(){
+				
+				// reorder
+				obj.pointGeometry.setDrawRange( 0, Math.min( obj.geometryMorphs[obj.morphingIndex].pointPosition.length/3,obj.maxNodes) );
+				obj.lineGeometry.setDrawRange( 0, Math.min(  obj.geometryMorphs[obj.morphingIndex].linePosition.length/9 ,obj.maxNodesLines) );
+				obj.pointGeometry.countTarget = Math.min( obj.geometryMorphs[obj.morphingIndex].pointPosition.length/3,obj.maxNodes  );
+
+				// (!!!) la pata
+				
+				//obj.pointGeometry.attributes.target_position.array
+				for (var i = obj.pointGeometry.attributes.target_position.array.length *3 - 1 ; i >= 0 ; i--)
+					obj.pointGeometry.attributes.target_position.array[i] = obj.geometryMorphs[obj.morphingIndex].pointPosition[i];
+
+				for (var i = obj.lineGeometry.attributes.target_position.array.length *3 - 1 ; i >= 0 ; i--)
+					obj.lineGeometry.attributes.target_position.array[i] = obj.geometryMorphs[obj.morphingIndex].linePosition[i];
+
 			},2000);
 
 			setTimeout( function(){
+				setIntervalUntil(
+				function(){
+					obj.children[1].material.opacity += 0.01;
+				},
+				20,
+				function(){
+					return (obj.children[1].material.opacity>=obj.lineOpacity);
+				}
+				)
+			},5000);
+
+			setTimeout( function(){
+				// allow click
 				obj.morphing = -1;
 			},4500);
 		}
 	} 
+
+	// loading OBJs
 
 	var loader = [];
 
@@ -72,38 +234,42 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 
 			loader[index].load(
 				// resource URL
-				'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/models/'+loads[index],
+				LOAD_MODELS_URL+loads[index],
 				function ( loadedObject ) {
 					
 					console.log("loadedObject");
 
-					var c = 0;
+					obj.geometryMorphs[index] = CTHREE.Morph([],[]); // (!) dos geometrias, una para las lineas 1 y otra para los puntos 0, evaluar alternativas
 
-					obj.geometryMorphs[index] = [];
+					var c = 0;
 
 					for (var i = loadedObject.children[0].geometry.attributes.position.array.length - 3; i >= 0; i-=3) {
 
-						var add = true;
+						var ignore = true;
 
-						if (obj.geometryMorphs[index].length>=3)
-						for (var j = obj.geometryMorphs[index].length - 3; j >= 0; j-=3) {
-							add = (Math.sqrt( 
-								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i]-obj.geometryMorphs[index][j],2) +
-								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i+1]-obj.geometryMorphs[index][j+1],2) +
-								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i+2]-obj.geometryMorphs[index][j+2],2)
-							)>=0.00000000002);
+						if (c>=3)
+						for (var j = obj.geometryMorphs[index].pointPosition.length - 3; j >= 0; j-=3) {
+							ignore = ( 
+								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i  ]-obj.geometryMorphs[index].pointPosition[j  ],2) +
+								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i+1]-obj.geometryMorphs[index].pointPosition[j+1],2) +
+								Math.pow(loadedObject.children[0].geometry.attributes.position.array[i+2]-obj.geometryMorphs[index].pointPosition[j+2],2)
+							>=0.000000002);
 
-							if (add==false){
+							if (ignore==false){
 								break;
 							}
 						}
 
-						if (add){
-							obj.geometryMorphs[index][c++] = loadedObject.children[0].geometry.attributes.position.array[i]
-							obj.geometryMorphs[index][c++] = loadedObject.children[0].geometry.attributes.position.array[i+1]
-							obj.geometryMorphs[index][c++] = loadedObject.children[0].geometry.attributes.position.array[i+2]
+						if (ignore){
+							obj.geometryMorphs[index].pointPosition[c++] = loadedObject.children[0].geometry.attributes.position.array[i  ];
+							obj.geometryMorphs[index].pointPosition[c++] = loadedObject.children[0].geometry.attributes.position.array[i+1];
+							obj.geometryMorphs[index].pointPosition[c++] = loadedObject.children[0].geometry.attributes.position.array[i+2];
 						}
 					}
+
+					obj.geometryMorphs[index].linePosition = loadedObject.children[0].geometry.attributes.position.array;
+
+					console.log(obj.geometryMorphs[index]);
 
 				},
 
@@ -118,8 +284,6 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 			);
 		})(index);
 	}
-
-
 }
 
 CTHREE.Orthographic2DCamera = function(cameraField, far){
@@ -160,6 +324,7 @@ CTHREE.StandardRenderer = function(container, color){
 	renderer = new THREE.WebGLRenderer({antialias: false});
 	renderer.setClearColor(color,1.0);
 	renderer.setSize(window.innerWidth,window.innerHeight);
+	renderer.setPixelRatio( 1 );
 
 	container.appendChild(renderer.domElement);
 
@@ -219,4 +384,39 @@ CTHREE.Math.normalRandom = function() {
 	return ( Math.random() + Math.random() + Math.random() + Math.random()*(Math.PI-3) ) / Math.PI;
 }
 
+/*
 
+CTHREE.TypedArrayUtils.quicksortDistance = function ( arr, eleSize, orderElement ) {
+
+	/*var visited = [];
+
+	var findUnvisitedNear = function ( arr , ind ) {
+
+		for (var i = 0, il = arr.length ; i < il - eleSize; i-=eleSize) {
+			if ( visited.includes(i) )
+				continue;
+
+		}
+	}
+
+	var metric = function(a, b){	return Math.pow(a[0] - b[0], 2) +  Math.pow(a[1] - b[1], 2) +  Math.pow(a[2] - b[2], 2); } 
+
+	for (var i = 0, jl = arr.length, il = arr.length - eleSize; i < il; i+=eleSize) {
+		for (var j = i; j < jl; j+=eleSize) {
+		arr[i]
+	}
+
+	var swapF = function ( a, b ) {
+
+		for ( y = 0; y < eleSize; y ++ ) {
+
+			tmp = arr[ a + y ];
+			arr[ a + y ] = arr[ b + y ];
+			arr[ b + y ] = tmp;
+
+		}
+
+	};
+
+};
+*/
