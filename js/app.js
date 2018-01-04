@@ -1,5 +1,5 @@
-//var LOAD_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/textures/';
-var LOAD_URL = '../assets/textures/';
+var LOAD_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/textures/';
+//var LOAD_URL = '../assets/textures/';
 
 
 var renderer;

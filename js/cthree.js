@@ -1,5 +1,5 @@
-//var LOAD_MODELS_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/models/';
-var LOAD_MODELS_URL = '../assets/models/';
+var LOAD_MODELS_URL = 'https://raw.githubusercontent.com/luis11011/Three.js-dot-figures/master/assets/models/';
+//var LOAD_MODELS_URL = '../assets/models/';
 
 var CTHREE = { Math: {} };
 
