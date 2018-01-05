@@ -5,6 +5,8 @@ var CTHREE = { Math: {} };
 
 CTHREE.ArrayUtils = {};
 
+(function(){Math.clamp=function(a,b,c){return Math.max(b,Math.min(c,a));}})();
+
 CTHREE.swap3inArray = function(array,i,j){
 	var aux = [];
 
@@ -22,11 +24,6 @@ CTHREE.swap3inArray = function(array,i,j){
 
 	return array;
 }
- 
-CTHREE.MouseController = function(){
-	
-}
-
 
 CTHREE.Morph = function(pointArray,lineArray){
 
@@ -67,8 +64,8 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 
 	// point geometry
 	obj.pointGeometry = new THREE.BufferGeometry();
-	obj.pointGeometry.setDrawRange( 0, obj.noiseNodes/2 );
-	obj.pointGeometry.countTarget = obj.maxNodes;
+	obj.pointGeometry.setDrawRange( 0, obj.noiseNodes*0.85 );
+	obj.pointGeometry.countTarget = obj.noiseNodes;
 
 	var positions = new Float32Array(obj.maxNodes*3);
 	var targets = new Float32Array(obj.maxNodes*3);
@@ -93,24 +90,15 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 
 	var positions = new Float32Array(obj.maxNodesLines*3);
 	var targets = new Float32Array(obj.maxNodesLines*3);
-	//var colors = new Float32Array(obj.maxNodesLines*3);
 
 	obj.c_black = new THREE.Color( 0x000000 );
 	obj.c_white = new THREE.Color( 0xffffff );
-
-	/*for (var i = obj.maxNodesLines - 1 ; i >= 0; i--) {
-		var color = !(i%40) ? obj.c_white : obj.c_black;
-		colors[i*3-3] = color.r;
-		colors[i*3-2] = color.g;
-		colors[i*3-1] = color.b;
-	}*/
 
 	for (var i = obj.maxNodesLines*3 - 1 ; i >= 0; i--) {
 		positions[i] = obj.pointGeometry.attributes.position.array[i] || CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
 		targets[i] = obj.pointGeometry.attributes.target_position.array[i]  || CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
 	}
 
-	//obj.lineGeometry.addAttribute( 'color' , new THREE.Float32BufferAttribute( colors, 3 ) );
 	obj.lineGeometry.addAttribute( 'position' , new THREE.Float32BufferAttribute(positions,3) );
 	obj.lineGeometry.addAttribute( 'target_position' , new THREE.Float32BufferAttribute(targets,3) );
 	obj.lineGeometry.boundingBox = null;
@@ -133,23 +121,9 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 			obj.lineGeometry.attributes.position.array[i] += (obj.lineGeometry.attributes.target_position.array[i] - obj.lineGeometry.attributes.position.array[i])*speed;
 		}
 
-		/*for (var i = obj.lineGeometry.attributes.color.array.length - 3; i >= 0; i-=3){
-			var color = i%9 ? obj.c_white : obj.c_black;
-			// var color = (distanceToNext(obj.pointGeometry.attributes.position.array,i)<0.000000001) ? obj.c_white : obj.c_black;
-			colors[i] = color.r;
-			colors[i+1] = color.g;
-			colors[i+2] = color.b;
-		}*/
-
 		obj.lineGeometry.attributes.position.needsUpdate = true;
 
-		//for (var i = obj.maxNodesLines - 1 ; i >= 1; i--) {
-		//	var color = /*(Math.abs(obj.pointGeometry.attributes.position.array[i]-obj.pointGeometry.attributes.position.array[i+3])<200.0)*/ i%2 ? obj.c_white : obj.c_black;
-		//	colors[i*3-3] = color.r;
-		//	colors[i*3-2] = color.g;
-		//	colors[i*3-1] = color.b;
-		//}
-
+		obj.children[1].material.opacity = Math.clamp(obj.children[1].material.opacity+obj.fadeSpeed,0,obj.lineOpacity)
 	}
 
 	obj.morphNow = function(index){
@@ -168,15 +142,7 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 			
 			obj.pointGeometry.countTarget = obj.noiseNodes;
 
-			setIntervalUntil(
-				function(){
-					obj.children[1].material.opacity -= 0.01;
-				},
-				10,
-				function(){
-					return (obj.children[1].material.opacity<=0.0);
-				}
-				)
+			obj.fadeSpeed = -0.01;
 			
 			for (var i = obj.pointGeometry.attributes.target_position.array.length - 1; i >= 0; i--)
 				obj.pointGeometry.attributes.target_position.array[i] = CTHREE.Math.normalRandom()*MAX_RANDOM*2 -MAX_RANDOM;
@@ -188,12 +154,10 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 				
 				// reorder
 				obj.pointGeometry.setDrawRange( 0, Math.min( obj.geometryMorphs[obj.morphingIndex].pointPosition.length/3,obj.maxNodes) );
-				obj.lineGeometry.setDrawRange( 0, Math.min(  obj.geometryMorphs[obj.morphingIndex].linePosition.length/9 ,obj.maxNodesLines) );
 				obj.pointGeometry.countTarget = Math.min( obj.geometryMorphs[obj.morphingIndex].pointPosition.length/3,obj.maxNodes  );
 
 				// (!!!) la pata
 				
-				//obj.pointGeometry.attributes.target_position.array
 				for (var i = obj.pointGeometry.attributes.target_position.array.length *3 - 1 ; i >= 0 ; i--)
 					obj.pointGeometry.attributes.target_position.array[i] = obj.geometryMorphs[obj.morphingIndex].pointPosition[i];
 
@@ -203,15 +167,8 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 			},2000);
 
 			setTimeout( function(){
-				setIntervalUntil(
-				function(){
-					obj.children[1].material.opacity += 0.01;
-				},
-				20,
-				function(){
-					return (obj.children[1].material.opacity>=obj.lineOpacity);
-				}
-				)
+				obj.lineGeometry.setDrawRange( 0, obj.lineGeometry.attributes.target_position.array.length );
+				obj.fadeSpeed = +0.003;
 			},5000);
 
 			setTimeout( function(){
@@ -222,21 +179,16 @@ CTHREE.MorphObject3DInterface = function(obj,loads){
 	} 
 
 	// loading OBJs
-
 	var loader = [];
 
 	for (var index = 0; index < loads.length; index++)
 	{
-
 		loader[index] = new THREE.OBJLoader();
-
 		(function(index){
-
 			loader[index].load(
 				// resource URL
 				LOAD_MODELS_URL+loads[index],
 				function ( loadedObject ) {
-					
 					console.log("loadedObject");
 
 					obj.geometryMorphs[index] = CTHREE.Morph([],[]); // (!) dos geometrias, una para las lineas 1 y otra para los puntos 0, evaluar alternativas
@@ -331,6 +283,29 @@ CTHREE.StandardRenderer = function(container, color){
 	return renderer;
 }
 
+CTHREE.takeScreenshot = function() {
+    // open in new window like this
+    var w = window.open('','');
+    w.document.title = "Screenshot";
+    //w.document.body.style.backgroundColor = "red";
+    var img = new Image();
+    // Without 'preserveDrawingBuffer' set to true, we must render now
+   	renderer.setPixelRatio( 3 );
+    renderer.render(scene, camera);
+
+    img.src = renderer.domElement.toDataURL();
+    w.document.body.appendChild(img);
+    renderer.setPixelRatio( 1 );
+    
+    // download file like this.
+    //var a = document.createElement('a');
+    // Without 'preserveDrawingBuffer' set to true, we must render now
+    //renderer.render(scene, camera);
+    //a.href = renderer.domElement.toDataURL().replace("image/png", "image/octet-stream");
+    //a.download = 'canvas.png'
+    //a.click();
+}
+
 CTHREE.RendererClicker = function(renderer, camera, objects){
 	renderer.domElement.addEventListener('mousedown', function(event) {
 		var vector = new THREE.Vector3(
@@ -353,7 +328,6 @@ CTHREE.RendererClicker = function(renderer, camera, objects){
 }
 
 class Window{
-
 	recalculate (win){
 		this.win = win || window;
 
@@ -367,9 +341,9 @@ class Window{
 	constructor (win){
 		this.recalculate(win);
 	}
-
-
 }
+
+
 
 CTHREE.Math.lerp = function(a, b, n) {
   //return (1 - n) * a + n * b;

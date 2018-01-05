@@ -43,13 +43,10 @@ function init(){
 
 	var genDistance = Math.tan(cameraFOV*Math.PI/180)*cameraDistance;
 
-	//camera = new CTHREE.Orthographic2DCamera(20,1000);
 	camera = new CTHREE.Perspective2DCamera(cameraFOV,cameraDistance*2,cameraDistance);
 	camera.lookAt(scene.position);
 
-	camera.target = { position: new THREE.Vector3(camera.position.x,camera.position.y,camera.position.z), rSpeed: 0.01 };	
-
-	camera.position.y+=0;
+	camera.target = { position: new THREE.Vector3(camera.position.x,camera.position.y,camera.position.z), rSpeed: 0.015 };	
 
 	addNodesObject( scene , 1200 , 3000, 12800 );
 
@@ -71,7 +68,6 @@ function init(){
 }
 
 function animate() {
-
 	setTimeout( function() {
 
 		requestAnimationFrame( animate );
@@ -87,7 +83,6 @@ function animate() {
 
 		object.children[0].material.opacity = control.opacity;
 		object.children[0].material.color = new THREE.Color(control.color);
-		//object.children[1].material.opacity = control.opacity/12;
 		object.children[1].material.color = new THREE.Color(control.color);
 
 		if ( Math.abs(camera.position.x-camera.target.position.x)>0.1 ){
@@ -97,9 +92,7 @@ function animate() {
 
 		if (mouse.click){
 			mouse.click = false;
-
 			if ( mouse.position.x<0.33 ){
-
 				if (object.morphingIndex==0){
 					object.morphNow(1);
 					camera.target.position.x = 100;
@@ -128,9 +121,7 @@ function addNodesObject( scene, noiseNodes, maxNodes, maxNodesLines ){
 	obj = new THREE.Object3D();
 
 	obj.noiseNodes = noiseNodes;
-
 	obj.maxNodes = maxNodes;
-
 	obj.maxNodesLines = maxNodesLines;
 
 	var material = new THREE.PointsMaterial({
@@ -146,12 +137,11 @@ function addNodesObject( scene, noiseNodes, maxNodes, maxNodesLines ){
 	var lineMaterial = new THREE.LineBasicMaterial( {
 		visible: true, //true,
 		transparent: true,
+		opacity: 0,
 		linecap: 'round', //ignored by WebGLRenderer
 		linejoin:  'round', //ignored by WebGLRenderer
 		//vertexColors: THREE.VertexColors
 	} );
-
-	obj.lineOpacity = 0.125;
 
 	CTHREE.MorphObject3DInterface(obj,['human10.obj','bird10.obj']);
 
@@ -161,92 +151,12 @@ function addNodesObject( scene, noiseNodes, maxNodes, maxNodesLines ){
 	obj.children[0].castShadow = false;
 	obj.children[1].name = "nodes.lines";
 	obj.children[1].castShadow = false;
+
+	obj.lineOpacity = 0.125;
+	obj.fadeSpeed = 0;
+	obj.children[1].material.opacity = 0;
 	
 	scene.add(obj);
-
-}
-
-function createPoints(rw,rh,rd,n){
-	var geometry = new THREE.BufferGeometry();
-
-	var vertices = new Float32Array(n*3);
-
-	var targets = new Float32Array(n*3);
-
-	var sizes = new Float32Array(n);
-
-	for (var i = n-1 ; i >= 0; i--) {
-
-		vertices[i*3+0] = CTHREE.Math.lerp(-rw,rw,CTHREE.Math.normalRandom());
-		vertices[i*3+1] = CTHREE.Math.lerp(-rh,rh,Math.random());
-		vertices[i*3+2] = CTHREE.Math.lerp(-rd,rd,CTHREE.Math.normalRandom());
-
-		targets[i*3+0] = vertices[i*3+0];
-		targets[i*3+1] = vertices[i*3+1];
-		targets[i*3+2] = vertices[i*3+2];
-	}
-
-	for (var i = vertices.length-3; i>=0; i-=3) {
-		var minDistance = 99999;
-		var distance;
-		var sdi = i-3; // smallest distance index
-		var aux = [];
-
-		for (var j = i-3; j>=0; j-=3)  {
-			distance = Math.abs(vertices[i]-vertices[j]) + Math.abs(vertices[i+1]-vertices[j+1]) + Math.abs(vertices[i+2]-vertices[j+2]);
-			if (distance<=minDistance){
-				minDistance = distance;
-				sdi = j;
-			}
-		}
-
-		if (sdi!=i-3){
-			targets  = CTHREE.swap3inArray( targets ,  i-3 , sdi );
-		}
-	}
-
-	geometry.boundingBox = null;
-
-	geometry.addAttribute('target_position',new THREE.BufferAttribute(targets,3))
-	geometry.addAttribute('position',new THREE.BufferAttribute(vertices,3))
-	geometry.addAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
-
-	geometry.computeBoundingSphere();
-
-	geometry.clearGroups();
-	geometry.addGroup( 0, Infinity, 0 );
-	geometry.addGroup( 0, Infinity, 1 );
-
-	var material = new THREE.PointsMaterial();
-	material.sizeAttenuation = true;
-	material.size = 1;
-	material.map = new THREE.TextureLoader().load('../../assets/textures/dot.png');
-	material.blending = THREE.AdditiveBlending;
-	material.transparent = true;
-	material.opacity = 1;
-	material.alphaTest = 0.0001
-
-	var material2 = new THREE.MeshBasicMaterial();
-	material2.sizeAttenuation = true;
-	material2.size = 2;
-	material2.map = new THREE.TextureLoader().load('../../assets/textures/dot.png');
-	material2.blending = THREE.AdditiveBlending;
-	material2.transparent = true;
-	material2.opacity = 0.5;
-	material2.alphaTest = 0.0001
-
-	var lineMaterial = new THREE.MeshBasicMaterial( {
-		visible: true,
-		transparent: true,
-		opacity: 0.15,
-	} );
-
-	var ps = [ new THREE.Points( geometry , material  ) , new THREE.Line( geometry , lineMaterial ) ];
-	ps[0].name = "nodes";
-	ps[0].castShadow = false;
-	ps[1].name = "lines";
-	ps[1].castShadow = false;
-	return ps;
 }
 
 function addControlGui(controlObject) {
